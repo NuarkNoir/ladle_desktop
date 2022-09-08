@@ -9,13 +9,18 @@ environment:
 dependencies:
   bitsdojo_window: ^0.1.4
   bloc: ^8.1.0
+  bloc_concurrency: ^0.2.0
   equatable: ^2.0.5
   fluent_ui: ^3.12.0
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.1
+  intl: ^0.17.0
   meta: ^1.7.0
+  styled_widget: ^0.4.0+3
   system_theme: ^2.0.0
+  url_launcher: ^6.1.5
+  yaml: ^3.1.1
 
 dev_dependencies:
   flutter_test:

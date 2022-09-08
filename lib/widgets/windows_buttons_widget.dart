@@ -16,6 +16,7 @@ class WindowButtons extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           MinimizeWindowButton(),
+          MaximizeWindowButton(),
           CloseWindowButton(),
         ],
       ),

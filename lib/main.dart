@@ -1,6 +1,7 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:ladle/bloc/scoop_list_bloc.dart';
 import 'package:system_theme/system_theme.dart';
 
@@ -12,8 +13,10 @@ void main() async {
 
   await SystemTheme.accentColor.load();
 
+  Intl.defaultLocale = 'en_US';
+
   doWhenWindowReady(() {
-    const initialSize = Size(600, 450);
+    const initialSize = Size(800, 600);
     appWindow.minSize = initialSize;
     appWindow.size = initialSize;
     appWindow.alignment = Alignment.center;
@@ -24,7 +27,7 @@ void main() async {
   runApp(MultiBlocProvider(
     providers: [
       BlocProvider(
-        create: (context) => ScoopListBloc(),
+        create: (context) => ScoopListBloc()..add(ScoopLocate()),
       ),
     ],
     child: const LadleApp(),
