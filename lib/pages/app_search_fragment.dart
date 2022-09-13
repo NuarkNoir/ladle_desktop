@@ -89,6 +89,10 @@ class _AppSearchFragmentState extends State<AppSearchFragment> {
   }
 
   Widget _buildLoadedBody(ScoopSearchLoaded state) {
+    final flattenedApps = state.apps.entries
+        .map((e) => e.value)
+        .expand((i) => i)
+        .toList(growable: false);
     return Flex(
       direction: Axis.horizontal,
       children: [
@@ -97,9 +101,9 @@ class _AppSearchFragmentState extends State<AppSearchFragment> {
           child: ListView.builder(
             key: PageStorageKey(state.apps.length),
             controller: scrollController,
-            itemCount: state.apps["main"]?.length ?? 0,
+            itemCount: flattenedApps.length,
             itemBuilder: (context, index) =>
-                _createAppWidget(state.apps["main"]![index]),
+                _createAppWidget(flattenedApps[index]),
           ).backgroundColor(Colors.black.withAlpha(50)),
         ),
         Expanded(
