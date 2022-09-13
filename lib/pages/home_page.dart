@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../bloc/scoop_list_bloc.dart';
 import '../widgets/windows_buttons_widget.dart';
 import 'app_list_fragment.dart';
+import 'app_search_fragment.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -161,7 +162,7 @@ class _HomePageState extends State<HomePage> {
       index: _fragmentIndex,
       children: const [
         AppListFragment(),
-        Center(child: Text("Updates")),
+        AppSearchFragment(),
       ],
     );
   }

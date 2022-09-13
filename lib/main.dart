@@ -6,6 +6,7 @@ import 'package:ladle/bloc/scoop_list_bloc.dart';
 import 'package:system_theme/system_theme.dart';
 
 import 'app.dart';
+import 'bloc/scoop_search_bloc.dart';
 
 void main() async {
   final binding =
@@ -28,6 +29,10 @@ void main() async {
     providers: [
       BlocProvider(
         create: (context) => ScoopListBloc()..add(ScoopLocate()),
+      ),
+      BlocProvider(
+        create: (context) =>
+            ScoopSearchBloc()..add(const ScoopSearchQueryChanged("")),
       ),
     ],
     child: const LadleApp(),

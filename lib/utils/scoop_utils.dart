@@ -26,12 +26,56 @@ Future<List<String>> getScoopBuckets() async {
   return buckets;
 }
 
-Future<List<ScoopAppModel>> searchScoopApps(String query) async {
+Future<Map<String, List<ScoopAppModel>>> searchInstallableApps(
+    String query) async {
   final home = Platform.environment["UserProfile"];
   final buckets = await getScoopBuckets();
-  final apps = <ScoopAppModel>[];
+
+  Map<String, List<ScoopAppModel>> bucketMap = {};
 
   for (final bucket in buckets) {
+    final apps = <ScoopAppModel>[];
+    final bucketDir = Directory("$home/scoop/buckets/$bucket/bucket");
+    final files = bucketDir.listSync().whereType<File>().where(
+          (element) =>
+              element.path.endsWith(".json") ||
+              element.path.endsWith(".yml") ||
+              element.path.endsWith(".yaml"),
+        );
+    for (final file in files) {
+      final content = await file.readAsString();
+      final data =
+          file.path.endsWith(".json") ? jsonDecode(content) : loadYaml(content);
+
+      String appName =
+          file.path.split("\\").last.replaceAll(RegExp(r"\.(json|ya?ml)"), "");
+      String appDescription = data["description"] ?? "No description";
+      DateTime appUpdatedAt = await file.lastModified();
+
+      if (appName.toLowerCase().contains(query.toLowerCase()) ||
+          appDescription.toLowerCase().contains(query.toLowerCase())) {
+        apps.add(ScoopAppModel(
+          name: appName,
+          description: appDescription,
+          bucket: bucket,
+          updatedAt: appUpdatedAt,
+        ));
+      }
+    }
+    bucketMap[bucket] = apps;
+  }
+
+  return bucketMap;
+}
+
+Future<Map<String, List<ScoopAppModel>>> getAllInstallableApps() async {
+  final home = Platform.environment["UserProfile"];
+  final buckets = await getScoopBuckets();
+
+  Map<String, List<ScoopAppModel>> bucketMap = {};
+
+  for (final bucket in buckets) {
+    final apps = <ScoopAppModel>[];
     final bucketDir = Directory("$home/scoop/buckets/$bucket/bucket");
     final files = bucketDir.listSync().whereType<File>().where(
           (element) =>
@@ -56,9 +100,10 @@ Future<List<ScoopAppModel>> searchScoopApps(String query) async {
         updatedAt: appUpdatedAt,
       ));
     }
+    bucketMap[bucket] = apps;
   }
 
-  return apps;
+  return bucketMap;
 }
 
 Future<List<ScoopAppModel>> getInstalledScoopApps() async {
@@ -97,4 +142,12 @@ Future<List<ScoopAppModel>> getInstalledScoopApps() async {
   }
 
   return apps;
+}
+
+Future<bool> checkAppInstalled(ScoopAppModel app) async {
+  final home = Platform.environment["UserProfile"];
+  final scoopAppsDir = Directory("$home/scoop/apps");
+  final appDir = Directory("${scoopAppsDir.path}/${app.name}");
+
+  return await appDir.exists();
 }

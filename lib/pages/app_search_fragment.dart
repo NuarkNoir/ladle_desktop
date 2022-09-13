@@ -4,86 +4,139 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:ladle/bloc/scoop_search_bloc.dart';
 import 'package:ladle/models/scoop_app_model.dart';
+import 'package:ladle/utils/scoop_utils.dart';
 import 'package:ladle/utils/set_extension.dart';
 import 'package:styled_widget/styled_widget.dart';
 
 import '../bloc/scoop_list_bloc.dart';
 
-class AppListFragment extends StatefulWidget {
-  const AppListFragment({Key? key}) : super(key: key);
+class AppSearchFragment extends StatefulWidget {
+  const AppSearchFragment({Key? key}) : super(key: key);
 
   @override
-  State<AppListFragment> createState() => _AppListFragmentState();
+  State<AppSearchFragment> createState() => _AppSearchFragmentState();
 }
 
-class _AppListFragmentState extends State<AppListFragment> {
+class _AppSearchFragmentState extends State<AppSearchFragment> {
   final scrollController = ScrollController();
+  final searchController = TextEditingController();
   final openedApps = <ScoopAppModel>{};
   int currentIndex = 0;
 
+  String _previousSearch = '';
+
+  @override
+  void initState() {
+    super.initState();
+    searchController.text = _previousSearch;
+    searchController.addListener(() {
+      if (_previousSearch != searchController.text) {
+        _previousSearch = searchController.text;
+        context
+            .read<ScoopSearchBloc>()
+            .add(ScoopSearchQueryChanged(searchController.text));
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final state = context.read<ScoopListBloc>().state;
-    if (state is! ScoopLocalAppList) {
-      return const Center(child: Text("No apps installed"));
-    }
-
-    return ScaffoldPage(
-      padding: EdgeInsets.zero,
-      header: AutoSuggestBox(
-        items: state.apps.map((e) => e.name).toList(),
-        leadingIcon: const Icon(FluentIcons.search).padding(all: 16),
-        placeholder: "Search for apps",
-        onSelected: (value) {
-          final app = state.apps.firstWhere((e) => e.name == value);
-          setState(() {
-            openedApps.add(app);
-          });
-        },
-      ),
-      content: Flex(
-        direction: Axis.horizontal,
-        children: [
-          Expanded(
-            flex: 1,
-            child: ListView.builder(
-              key: PageStorageKey(state.apps.length),
-              controller: scrollController,
-              itemCount: state.apps.length,
-              itemBuilder: (context, index) =>
-                  _createAppWidget(state.apps[index]),
-            ).backgroundColor(Colors.black.withAlpha(50)),
+    return BlocBuilder<ScoopSearchBloc, ScoopSearchState>(
+      builder: (context, state) {
+        Widget body;
+        if (state is ScoopSearchLoading) {
+          body = _buildLoadingBody();
+        } else if (state is ScoopSearchLoaded) {
+          body = _buildLoadedBody(state);
+        } else if (state is ScoopSearchError) {
+          body = _buildErrorBody(state);
+        } else {
+          body = _buildInitialBody();
+        }
+        return ScaffoldPage(
+          padding: EdgeInsets.zero,
+          header: TextBox(
+            controller: searchController,
+            placeholder: "Search for apps",
           ),
-          Expanded(
-            flex: 3,
-            child: TabView(
-              wheelScroll: true,
-              currentIndex: currentIndex,
-              onChanged: (index) => setState(() => currentIndex = index),
-              tabs: openedApps
-                  .map((e) => Tab(
-                        text: Text(e.name),
-                        closeIcon: FluentIcons.chrome_close,
-                        onClosed: () => setState(
-                          () {
-                            final appIdx = openedApps.indexOf(e);
-                            if (appIdx < currentIndex) {
-                              currentIndex--;
-                            } else {
-                              currentIndex = 0;
-                            }
-                            openedApps.remove(e);
-                          },
-                        ),
-                      ))
-                  .toList(growable: false),
-              bodies: openedApps.map(_createAppPage).toList(growable: false),
-            ),
-          ),
-        ],
-      ),
+          content: body,
+        );
+      },
     );
+  }
+
+  Widget _buildLoadingBody() {
+    return Flex(
+      direction: Axis.horizontal,
+      children: [
+        Expanded(
+          flex: 1,
+          child: const Center(
+            child: ProgressBar(),
+          ).backgroundColor(Colors.black.withAlpha(50)),
+        ),
+        const Expanded(
+          flex: 3,
+          child: Center(
+            child: ProgressBar(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadedBody(ScoopSearchLoaded state) {
+    return Flex(
+      direction: Axis.horizontal,
+      children: [
+        Expanded(
+          flex: 1,
+          child: ListView.builder(
+            key: PageStorageKey(state.apps.length),
+            controller: scrollController,
+            itemCount: state.apps["main"]?.length ?? 0,
+            itemBuilder: (context, index) =>
+                _createAppWidget(state.apps["main"]![index]),
+          ).backgroundColor(Colors.black.withAlpha(50)),
+        ),
+        Expanded(
+          flex: 3,
+          child: TabView(
+            wheelScroll: true,
+            currentIndex: currentIndex,
+            onChanged: (index) => setState(() => currentIndex = index),
+            tabs: openedApps
+                .map((e) => Tab(
+                      text: Text(e.name),
+                      closeIcon: FluentIcons.chrome_close,
+                      onClosed: () => setState(
+                        () {
+                          final appIdx = openedApps.indexOf(e);
+                          if (appIdx < currentIndex) {
+                            currentIndex--;
+                          } else {
+                            currentIndex = 0;
+                          }
+                          openedApps.remove(e);
+                        },
+                      ),
+                    ))
+                .toList(growable: false),
+            bodies: openedApps.map(_createAppPage).toList(growable: false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorBody(ScoopSearchError state) {
+    return Text(state.message).center();
+  }
+
+  Widget _buildInitialBody() {
+    return const Text("Search for apps using input above").center();
   }
 
   Widget _createAppWidget(ScoopAppModel appModel) {
@@ -177,38 +230,25 @@ class _AppListFragmentState extends State<AppListFragment> {
               text: Text(
                   DateFormat("dd.MM.yyyy hh:mm").format(appModel.updatedAt)),
             ).padding(right: 8),
-            OutlinedButton(
-              child: const Text("Update"),
-              onPressed: () => _runScoopRoutine(
-                title: "Updating ${appModel.name}",
-                params: ["update", appModel.name],
-              ),
-            ).padding(right: 8),
-            OutlinedButton(
-              child: const Text("Reinstall"),
-              onPressed: () => _runScoopRoutine(
-                title: "Reinstalling ${appModel.name}",
-                executable: "powershell",
-                params: [
-                  "-c",
-                  "scoop",
-                  "uninstall",
-                  appModel.name,
-                  "&&",
-                  "scoop",
-                  "install",
-                  appModel.name
-                ],
-              ).then((_) =>
-                  context.read<ScoopListBloc>().add(ScoopListRequested())),
-            ).padding(right: 8),
-            OutlinedButton(
-              child: const Text("Uninstall"),
-              onPressed: () => _runScoopRoutine(
-                title: "Uninstalling ${appModel.name}",
-                params: ["uninstall", appModel.name],
-              ).then((_) =>
-                  context.read<ScoopListBloc>().add(ScoopListRequested())),
+            FutureBuilder<bool>(
+              future: checkAppInstalled(appModel),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final data = snapshot.data;
+                  if (data != null && data) {
+                    return Row(children: _buttonsForInstalledApp(appModel));
+                  } else {
+                    return Row(children: _buttonsForNotInstalledApp(appModel));
+                  }
+                } else if (snapshot.hasError) {
+                  return Chip(
+                    image: const Icon(FluentIcons.error),
+                    text: Text(snapshot.error.toString()),
+                  ).padding(right: 8);
+                } else {
+                  return const SizedBox();
+                }
+              },
             ),
           ],
         ).paddingDirectional(bottom: 16),
@@ -218,6 +258,67 @@ class _AppListFragmentState extends State<AppListFragment> {
         ),
       ],
     ).padding(all: 16);
+  }
+
+  List<Widget> _buttonsForInstalledApp(ScoopAppModel appModel) {
+    return [
+      OutlinedButton(
+        child: const Text("Update"),
+        onPressed: () => _runScoopRoutine(
+          title: "Updating ${appModel.name}",
+          params: ["update", appModel.name],
+        ),
+      ).padding(right: 8),
+      OutlinedButton(
+        child: const Text("Reinstall"),
+        onPressed: () => _runScoopRoutine(
+          title: "Reinstalling ${appModel.name}",
+          executable: "powershell",
+          params: [
+            "-c",
+            "scoop",
+            "uninstall",
+            appModel.name,
+            "&&",
+            "scoop",
+            "install",
+            appModel.name
+          ],
+        ).then((_) {
+          context
+              .read<ScoopSearchBloc>()
+              .add(ScoopSearchQueryChanged(searchController.text));
+        }),
+      ).padding(right: 8),
+      OutlinedButton(
+        child: const Text("Uninstall"),
+        onPressed: () => _runScoopRoutine(
+          title: "Uninstalling ${appModel.name}",
+          params: ["uninstall", appModel.name],
+        ).then((_) {
+          context
+              .read<ScoopSearchBloc>()
+              .add(ScoopSearchQueryChanged(searchController.text));
+        }),
+      ),
+    ];
+  }
+
+  List<Widget> _buttonsForNotInstalledApp(ScoopAppModel appModel) {
+    return [
+      OutlinedButton(
+        child: const Text("Install"),
+        onPressed: () => _runScoopRoutine(
+          title: "Installing ${appModel.name}",
+          executable: "scoop",
+          params: ["install", appModel.name],
+        ).then((_) {
+          context
+              .read<ScoopSearchBloc>()
+              .add(ScoopSearchQueryChanged(searchController.text));
+        }),
+      ).padding(right: 8),
+    ];
   }
 
   Future<void> _runScoopRoutine({
