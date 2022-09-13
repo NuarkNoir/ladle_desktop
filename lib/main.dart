@@ -31,8 +31,7 @@ void main() async {
         create: (context) => ScoopListBloc()..add(ScoopLocate()),
       ),
       BlocProvider(
-        create: (context) =>
-            ScoopSearchBloc()..add(const ScoopSearchQueryChanged("")),
+        create: (context) => ScoopSearchBloc()..add(ScoopSearchReload()),
       ),
     ],
     child: const LadleApp(),

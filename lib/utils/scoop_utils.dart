@@ -50,6 +50,8 @@ Future<Map<String, List<ScoopAppModel>>> searchInstallableApps(
       String appName =
           file.path.split("\\").last.replaceAll(RegExp(r"\.(json|ya?ml)"), "");
       String appDescription = data["description"] ?? "No description";
+      String appHomepage = data["homepage"] ?? "";
+      String appVersion = data["version"] ?? "0.0.0";
       DateTime appUpdatedAt = await file.lastModified();
 
       if (appName.toLowerCase().contains(query.toLowerCase()) ||
@@ -58,6 +60,8 @@ Future<Map<String, List<ScoopAppModel>>> searchInstallableApps(
           name: appName,
           description: appDescription,
           bucket: bucket,
+          homepage: appHomepage,
+          version: appVersion,
           updatedAt: appUpdatedAt,
         ));
       }
@@ -91,12 +95,16 @@ Future<Map<String, List<ScoopAppModel>>> getAllInstallableApps() async {
       String appName =
           file.path.split("\\").last.replaceAll(RegExp(r"\.(json|ya?ml)"), "");
       String appDescription = data["description"] ?? "No description";
+      String appHomepage = data["homepage"] ?? "";
+      String appVersion = data["version"] ?? "0.0.0";
       DateTime appUpdatedAt = await file.lastModified();
 
       apps.add(ScoopAppModel(
         name: appName,
         description: appDescription,
         bucket: bucket,
+        homepage: appHomepage,
+        version: appVersion,
         updatedAt: appUpdatedAt,
       ));
     }
@@ -117,12 +125,16 @@ Future<List<ScoopAppModel>> getInstalledScoopApps() async {
       String appName = element.path.split("\\").last;
       String appDescription = "No description";
       String appBucket = "UNKNOWN";
+      String appHomepage = "";
+      String appVersion = "0.0.0";
       DateTime appUpdatedAt = DateTime.fromMicrosecondsSinceEpoch(0);
 
       final manifestFile = File("${element.path}/current/manifest.json");
       if (await manifestFile.exists()) {
         final manifestData = jsonDecode(await manifestFile.readAsString());
         appDescription = manifestData["description"] ?? appDescription;
+        appHomepage = manifestData["homepage"] ?? appHomepage;
+        appVersion = manifestData["version"] ?? appVersion;
         appUpdatedAt = await manifestFile.lastModified();
       }
 
@@ -136,6 +148,8 @@ Future<List<ScoopAppModel>> getInstalledScoopApps() async {
         name: appName,
         description: appDescription,
         bucket: appBucket,
+        homepage: appHomepage,
+        version: appVersion,
         updatedAt: appUpdatedAt,
       ));
     }

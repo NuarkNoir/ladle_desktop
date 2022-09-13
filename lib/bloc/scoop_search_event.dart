@@ -7,6 +7,8 @@ abstract class ScoopSearchEvent extends Equatable {
   List<Object> get props => [];
 }
 
+class ScoopSearchReload extends ScoopSearchEvent {}
+
 class ScoopSearchQueryChanged extends ScoopSearchEvent {
   final String query;
 

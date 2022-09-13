@@ -9,6 +9,7 @@ import 'package:ladle/models/scoop_app_model.dart';
 import 'package:ladle/utils/scoop_utils.dart';
 import 'package:ladle/utils/set_extension.dart';
 import 'package:styled_widget/styled_widget.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 import '../bloc/scoop_list_bloc.dart';
 
@@ -218,7 +219,14 @@ class _AppSearchFragmentState extends State<AppSearchFragment> {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(appModel.name).fontSize(32).bold().paddingDirectional(bottom: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(appModel.name).fontSize(32).bold(),
+            Text(appModel.version).padding(all: 4)
+          ],
+        ).paddingDirectional(bottom: 16),
         Row(
           children: [
             Chip(
@@ -250,6 +258,15 @@ class _AppSearchFragmentState extends State<AppSearchFragment> {
                 }
               },
             ),
+          ],
+        ).paddingDirectional(bottom: 8),
+        Row(
+          children: [
+            OutlinedButton(
+                child: const Text("Homepage"),
+                onPressed: () {
+                  launchUrlString(appModel.homepage);
+                }).padding(right: 8),
           ],
         ).paddingDirectional(bottom: 16),
         Text(

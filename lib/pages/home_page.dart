@@ -1,6 +1,7 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ladle/bloc/scoop_search_bloc.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -92,8 +93,10 @@ class _HomePageState extends State<HomePage> {
             ),
             onPressed: state is ScoopListLoading
                 ? null
-                : () =>
-                    context.read<ScoopListBloc>().add(ScoopUpdateRequested()),
+                : () {
+                    context.read<ScoopListBloc>().add(ScoopUpdateRequested());
+                    context.read<ScoopSearchBloc>().add(ScoopSearchReload());
+                  },
           ),
           WindowButton(
             iconBuilder: (buttonContext) => const Icon(
