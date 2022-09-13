@@ -34,7 +34,7 @@ class _AppListFragmentState extends State<AppListFragment> {
       header: AutoSuggestBox(
         items: state.apps.map((e) => e.name).toList(),
         leadingIcon: const Icon(FluentIcons.search).padding(all: 16),
-        placeholder: "Search for apps",
+        placeholder: "Search for installed apps",
         onSelected: (value) {
           final app = state.apps.firstWhere((e) => e.name == value);
           setState(() {
